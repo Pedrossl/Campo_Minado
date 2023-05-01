@@ -1,5 +1,4 @@
 import random
-from termcolor import colored
 from sty import fg, bg, ef, rs
 import csv
 
@@ -9,6 +8,8 @@ nrmColunas = 10
 bombas = 0
 bomba = []
 jogo = []
+derrotado = False
+venceu = False
 
 
 
@@ -30,11 +31,25 @@ def contar_simbolo(matriz, casinhas):
                 cont += 1
     return cont
 
+def salvar_pontos():
+   with open('pontuacao.csv', 'a', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    for nome, score in pontuacao.items():
+        writer.writerow([nome, score])
+    csvfile.close()
 
+def mostrar_pontos():
+    with open('pontuacao.csv', newline='') as csvfile:
+        lerArquivo = csv.reader(csvfile)
+        next(lerArquivo) # pula o cabeçalho
+        dados = [linha for linha in lerArquivo]
+    dados_ordenados = sorted(dados, key=lambda x: int(x[1]), reverse=True)
+    for nome, score in dados_ordenados:
+        print(f"{nome} ===> {score} pontos")
+    
 def nomeJogador():
     global nome
-    global dificuldade
-    nome = input('Qual seu nome ? ')
+    nome = input('Qual seu nome ? ').capitalize()
     print(f'Certo {nome} vamos ver se voce é bom mesmo!!')
 
 def escolhaDificuldade():
@@ -55,6 +70,17 @@ def matrizAposta():
         for j in range(nrmColunas):
             jogo[i].append('#')
 
+'''def visualJogo():
+    print()
+    mostrarNumeros()
+    print('  +------------------------------+')
+    for i,linha in enumerate(jogo, start=0):
+        print(f'{i} |', end = "")
+        for casa in linha:
+         print(fg.yellow + f' {casa} ' + fg.rs, end ="")
+        print("|")
+    print('  +------------------------------+')
+    print("    0  1  2  3  4  5  6  7  8  9")   '''
 def visualJogo():
     print()
     mostrarNumeros()
@@ -62,11 +88,17 @@ def visualJogo():
     for i,linha in enumerate(jogo, start=0):
         print(f'{i} |', end = "")
         for casa in linha:
-         print(f' {casa} ', end ="")
+            if casa == '+':
+                print(fg.green + f' {casa} ' + fg.rs, end ="")
+            elif casa.isdigit():
+                print(fg.green + f' {casa} ' + fg.rs, end ="")
+            else:
+                print(f' {casa} ' , end ="")
         print("|")
     print('  +------------------------------+')
-    print("    0  1  2  3  4  5  6  7  8  9")   
-    
+    print("    0  1  2  3  4  5  6  7  8  9")
+
+
 def mostrarNumeros():
     numBombas = 0   
 
@@ -126,7 +158,7 @@ def inicioJogo():
 def campoBombas():
  global bombas
  if dificuldade == 1:
-     bombas = 10
+     bombas = 0
  elif dificuldade == 2:
      bombas = 25
  elif dificuldade == 3:
@@ -143,13 +175,16 @@ def campoBombas():
 def visualJogoBomba():
     print()
     print('  +------------------------------+')
-    for i,linha in enumerate(bomba, start=0):
-        print(f'{i} |', end = "")
+    for i, linha in enumerate(bomba, start=0):
+        print(f'{i} |', end="")
         for casa in linha:
-         print(f' {casa} ', end ="")
+            if casa == '*':
+                print(fg.red + f' {casa} ' + fg.rs, end="")
+            else:
+                print(f' {casa} ', end="")
         print("|")
     print('  +------------------------------+')
-    print("    0  1  2  3  4  5  6  7  8  9") 
+    print("    0  1  2  3  4  5  6  7  8  9")
 
     
     
@@ -157,8 +192,26 @@ def escolha():
     global escolhidol
     global escolhidoc
     global score
+    global derrotado
+    global venceu
+   
     while True:
-            ganharJogo()
+        num_hashes = contar_simbolo(jogo, '#')
+
+        if num_hashes == 0:
+            while True:
+                print(fg.green + 'PARABENS!!!!! VOCE GANHOU!!!!!!' + fg.rs)  
+                salvar = input("Digite 's' se desejas salvar sua pontiação ou 'n' caso não queira ")
+                venceu = True
+                if salvar == 's' or salvar == 'S':
+                    pontuacao[nome] = score
+                    salvar_pontos()
+                    break
+                else:
+                    print('Okkk até mais!!')
+                    break
+            break
+        else:
             linha = int(input('Escolha uma linha (1-8): ')) 
             coluna = int(input('Escolha uma coluna (1-10): '))
             escolhidol = linha
@@ -172,11 +225,24 @@ def escolha():
             
             elif bomba[escolhidol][escolhidoc] == '*':
                 visualJogoBomba()
-                print(fg.red + 'BOOM!!' + fg.rs)    
+                print(fg.red + 'BOOM!!' + fg.rs)  
+                derrotado = True  
+                while True:
+                    salvar = input("Digite 's' se desejas salvar sua pontiação ou 'n' caso não queira ")
+                    if salvar == 's' or salvar == 'S':
+                        pontuacao[nome] = score
+                        salvar_pontos()
+                        break
+                    else:
+                        print('Okkk até mais!!')
+                        break
                 break
+
+                
 
             elif bomba[escolhidol][coluna] == '+':
                 return print('escolha um local que não foi escolhido')
+
             
             else:
                 bomba[linha][coluna] = '+'
@@ -184,7 +250,6 @@ def escolha():
                 
 
                 visualJogo()
-                ganharJogo()
                 
                 if dificuldade == 1:
                     score += 200
@@ -192,8 +257,6 @@ def escolha():
                     score += 300
                 elif dificuldade == 3:
                     score += 400
-                    
-                
                 
                 print(f'Score ===> {score}')
                         
@@ -201,12 +264,20 @@ def escolha():
             
     
 
-def ganharJogo():
+'''def ganharJogo():
     num_hashes = contar_simbolo(jogo, '#')
 
     if num_hashes == 0:
-        print(fg.green +'PARABENS VOCE GANHOU!!!!'+ fg.rs)
-        
+        while True:
+            salvar = input("Digite 's' se desejas salvar sua pontiação ou 'n' caso não queira")
+            if salvar == 's' or salvar == 'S':
+                pontuacao[nome] = score
+                salvar_pontos()
+                break
+            else:
+                print('Okkk até mais!!')
+                break
+                '''
 
 nomeJogador()
 escolhaDificuldade()
@@ -214,19 +285,40 @@ inicioJogo()
 matrizAposta()
 
 while True:
-        
-        if bomba[escolhidol][escolhidoc] == '*':
-            print('Voce perdeu!!!')
+
+    if venceu == True: 
+        print('1 -- Ver ScoreBoard')
+        print('2 -- Sair')
+        decidir = int(input('O Que desejas fazer ? '))    
+        if decidir == 1:
+            mostrar_pontos()
+        if decidir == 2:
             break
+    
+    elif derrotado == True:
+        print('1 -- Ver ScoreBoard')
+        print('2 -- Ver campo com as bombas')
+        print('3 -- Sair')
+        selecionar = int(input('O Que desejas fazer ? ')) 
+        if selecionar == 1:
+            mostrar_pontos()
+        if selecionar == 2:
+            visualJogoBomba()        
+        if selecionar == 3:
+            break
+    else :   
         print('1 -- Jogar')
         print('2 -- Ver ScoreBoard')
+        print('3 -- Sair')
          
-        ecolher = int(input('O Que desejas fazer ?'))
+        ecolher = int(input('O Que desejas fazer ? '))
         
 
         if ecolher == 1:
             escolha()
         if ecolher == 2:
-            print('alo')
-            break
+            mostrar_pontos()
+        if ecolher == 3:
+           print("Até mais!!")
+           break
 
