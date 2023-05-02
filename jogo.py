@@ -1,6 +1,7 @@
 import random
 from sty import fg, bg, ef, rs
 import csv
+from datetime import datetime
 
 score = 0
 nrmLinhas = 8
@@ -10,6 +11,8 @@ bomba = []
 jogo = []
 derrotado = False
 venceu = False
+data = datetime.now()
+dataBonita = data.strftime("%d/%m/%Y %H:%M")
 
 
 dificuldade = 0
@@ -32,7 +35,7 @@ def salvar_pontos():
    with open('pontuacao.csv', 'a', newline='') as csvfile:
     writer = csv.writer(csvfile)
     for nome, score in pontuacao.items():
-        writer.writerow([nome, score])
+        writer.writerow([nome, score, dataBonita])
     csvfile.close()
 
 def mostrar_pontos():
@@ -44,8 +47,8 @@ def mostrar_pontos():
     print() 
     print(bg.blue + 'ScoreBoard'+ bg.rs)
     print()
-    for nome, score in dados_ordenados:
-        print(ef.italic + f"{nome} ===> {score} pontos" + rs.italic)
+    for nome, score, dataBonita in dados_ordenados:
+        print(ef.italic + f"{nome} ===> {score} pontos {dataBonita}" + rs.italic)
     
 def nomeJogador():
     global nome
